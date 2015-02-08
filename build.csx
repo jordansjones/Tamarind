@@ -1,42 +1,48 @@
-#l "build/utilities.csx"
-
 ///////////////////////////////////////////////////////////////////////////////
 // ARGUMENTS
 ///////////////////////////////////////////////////////////////////////////////
 
 var target          = Argument<string>("target", "Default");
 var configuration   = Argument<string>("configuration", "Debug");
+var forcePackage    = HasArgument("forcePackage");
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBAL VARIABLES
 ///////////////////////////////////////////////////////////////////////////////
 
 var projectName = "Tamarind";
-var projectDescription = "C# port of Google's Guava library";
-var projectAuthors = new [] { "Jordan S. Jones", "Esteban Araya" };
+
+// "Root"
+var context =  GetContext();
+var baseDir = context.Environment.WorkingDirectory;
+var solution = baseDir.GetFilePath(projectName + ".sln");
 
 // Directories
-// WorkingDirectory is relative to this file. Make it relative to the Solution file.
-var baseDir = GetContext().Environment.WorkingDirectory;
+var solutionDir = solution.GetDirectory();
 var packagingRoot = baseDir.Combine("Packaging");
 var testResultsDir = baseDir.Combine("TestResults");
-var tamarindPackagingDir = packagingRoot.Combine(projectName);
+var nugetPackagingDir = packagingRoot.Combine(projectName);
+var metaDir = solutionDir.Combine("meta");
 
 // Files
-var solutionInfoCs = baseDir.Combine("build").GetFilePath("SolutionInfo.cs");
-var nuspecFile = baseDir.Combine("build").GetFilePath(projectName + ".nuspec");
-var solution = baseDir.GetFilePath(projectName + ".sln");
-var solutionDir = solution.GetDirectory();
+var solutionInfoCs = metaDir.GetFilePath("SolutionInfo.cs");
+var nuspecFile = metaDir.GetFilePath(projectName + ".nuspec");
+var licenseFile = solutionDir.GetFilePath("LICENSE.txt");
+var readmeFile = solutionDir.GetFilePath("README.md");
+var releaseNotesFile = metaDir.GetFilePath("ReleaseNotes.md");
+
+// CI System
+var appVeyorEnv =  context.AppVeyor().Environment;
 
 // Get whether or not this is a local build.
-var local = IsLocalBuild();
-var isReleaseBuild = IsReleaseBuild();
+var local = !context.BuildSystem().IsRunningOnAppVeyor;
+var isReleaseBuild = !local && appVeyorEnv.Repository.Tag.IsTag;
 
 // Release notes
-var releaseNotes = ParseReleaseNotes(baseDir.GetFilePath("ReleaseNotes.md"));
+var releaseNotes = ParseReleaseNotes(releaseNotesFile);
 
 // Version
-var buildNumber = GetBuildNumber();
+var buildNumber = !isReleaseBuild ? 0 : appVeyorEnv.Build.Number;
 var version = releaseNotes.Version.ToString();
 var semVersion = isReleaseBuild ? version : (version + string.Concat("-build-", buildNumber));
 
@@ -72,7 +78,7 @@ Task("Clean")
     foreach (var dir in new [] { packagingRoot, testResultsDir })
     {
          Information("Cleaning {0}", dir);
-         CleanDirectories(dir.FullPath);
+         CleanDirectory(dir);
     }
 });
 
@@ -117,26 +123,31 @@ Task("UnitTests")
         solutionDir + "/**/bin/" + configuration + "/**/*.Tests*.dll",
         new XUnit2Settings {
             OutputDirectory = testResultsDir,
-            HtmlReport = true
+            HtmlReport = true,
+            XmlReport = true
         }
     );
 });
 
-Task("CopyTamarindPackageFiles")
+Task("CopyNugetPackageFiles")
     .IsDependentOn("UnitTests")
-    .WithCriteria(() => isReleaseBuild)
     .Does(() =>
 {
+    if (!FileSystem.Exist(nugetPackagingDir))
+    {
+        CreateDirectory(nugetPackagingDir);
+    }
+
     var baseBuildDir = solutionDir.Combine(projectName).Combine("bin").Combine(configuration);
 
     var net45BuildDir = baseBuildDir.Combine("Net45");
-    var net45PackageDir = tamarindPackagingDir.Combine("lib/net45/");
+    var net45PackageDir = nugetPackagingDir.Combine("lib/net45/");
 
     var netcore45BuildDir = baseBuildDir.Combine("NetCore45");
-    var netcore45PackageDir = tamarindPackagingDir.Combine("lib/netcore45/");
+    var netcore45PackageDir = nugetPackagingDir.Combine("lib/netcore45/");
 
     var portableBuildDir = baseBuildDir.Combine("Portable-net45+win+wpa81+wp80");
-    var portablePackageDir = tamarindPackagingDir.Combine("lib/portable-net45+wp80+win+wpa81/");
+    var portablePackageDir = nugetPackagingDir.Combine("lib/portable-net45+wp80+win+wpa81/");
 
     var dirMap = new Dictionary<DirectoryPath, DirectoryPath> {
         { net45BuildDir, net45PackageDir },
@@ -148,37 +159,31 @@ Task("CopyTamarindPackageFiles")
 
     foreach (var dirPair in dirMap)
     {
-        var files = new DirectoryInfo(dirPair.Key.FullPath)
-            .EnumerateFiles()
-            .Select(x => new FilePath(x.FullName));
+        var files = FileSystem.GetDirectory(dirPair.Key)
+            .GetFiles(projectName + "*", SearchScope.Current)
+            .Select(x => x.Path);
         CopyFiles(files, dirPair.Value);
     }
 
     var packageFiles = new FilePath[] {
-        solutionDir.CombineWithFilePath("LICENSE.txt"),
-        solutionDir.CombineWithFilePath("README.md"),
-        solutionDir.CombineWithFilePath("ReleaseNotes.md")
+        licenseFile,
+        readmeFile,
+        releaseNotesFile
     };
 
-    CopyFiles(packageFiles, tamarindPackagingDir);
+    CopyFiles(packageFiles, nugetPackagingDir);
 });
 
-Task("CreateTamarindPackage")
-    .IsDependentOn("CopyTamarindPackageFiles")
-    .WithCriteria(() => isReleaseBuild)
+Task("CreateNugetPackage")
+    .IsDependentOn("CopyNugetPackageFiles")
     .Does(() =>
 {
     NuGetPack(
         nuspecFile,
         new NuGetPackSettings {
-            Id = projectName,
-            Title = projectName,
-            Authors = projectAuthors.ToList(),
-            Summary = projectDescription,
-            Description = projectDescription,
             Version = semVersion,
             ReleaseNotes = releaseNotes.Notes.ToArray(),
-            BasePath = tamarindPackagingDir,
+            BasePath = nugetPackagingDir,
             OutputDirectory = packagingRoot,
             Symbols = false,
             NoPackageAnalysis = false
@@ -191,7 +196,8 @@ Task("CreateTamarindPackage")
 ///////////////////////////////////////////////////////////////////////////////
 
 Task("Package")
-    .IsDependentOn("CreateTamarindPackage");
+    .IsDependentOn("CreateNugetPackage")
+    .WithCriteria(() => isReleaseBuild || forcePackage);
 
 Task("Default")
     .IsDependentOn("Package");

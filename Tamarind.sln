@@ -10,10 +10,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{A8E58A5B-3533-419B-A97E-8EE8020CBAD3}"
 	ProjectSection(SolutionItems) = preProject
 		appveyor.yml = appveyor.yml
-		build\build.csx = build\build.csx
+		build.csx = build.csx
 		build.ps1 = build.ps1
-		build\SolutionInfo.cs = build\SolutionInfo.cs
-		build\Tamarind.nuspec = build\Tamarind.nuspec
+		meta\SolutionInfo.cs = meta\SolutionInfo.cs
+		meta\Tamarind.nuspec = meta\Tamarind.nuspec
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tamarind-NetCore45", "Tamarind\Tamarind-NetCore45.csproj", "{71F1F848-E910-4425-A42E-7475FF80B89B}"
@@ -26,7 +26,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Meta", "Meta", "{C6563872-B
 	ProjectSection(SolutionItems) = preProject
 		LICENSE.txt = LICENSE.txt
 		README.md = README.md
-		ReleaseNotes.md = ReleaseNotes.md
+		meta\ReleaseNotes.md = meta\ReleaseNotes.md
 	EndProjectSection
 EndProject
 Global

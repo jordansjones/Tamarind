@@ -40,7 +40,7 @@
     <!-- A reference to the entire .NET Framework is automatically included -->
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\build\SolutionInfo.cs">
+    <Compile Include="..\meta\SolutionInfo.cs">
       <Link>Properties\SolutionInfo.cs</Link>
     </Compile>
     <Compile Include="Concurrent\IRateLimiter.cs" />
@@ -65,9 +65,23 @@
     <Compile Include="Core\Ticker.SystemStopwatchBackedTicker.cs" />
     <Compile Include="Core\Ticker.SystemTicker.cs" />
     <Compile Include="Core\TimeUnit.cs" />
+    <Compile Include="Hash\BloomFilter.cs" />
+    <Compile Include="Hash\BloomFilter.Extensions.cs" />
+    <Compile Include="Hash\BloomFilter.IStrategy.cs" />
+    <Compile Include="Hash\BloomFilter.Strategies.cs" />
+    <Compile Include="Hash\Funnels.cs" />
+    <Compile Include="Hash\HashCode.cs" />
+    <Compile Include="Hash\Hasher.Base.cs" />
+    <Compile Include="Hash\Hasher.BaseByte.cs" />
+    <Compile Include="Hash\Hashing.cs" />
+    <Compile Include="Hash\IFunnel.cs" />
+    <Compile Include="Hash\IHasher.cs" />
+    <Compile Include="Hash\IHashFunction.cs" />
+    <Compile Include="Hash\IPrimitiveSink.cs" />
     <Compile Include="Math\IntMath.cs" />
     <Compile Include="Primitives\Bytes.cs" />
     <Compile Include="Primitives\Ints.cs" />
+    <Compile Include="Primitives\Longs.cs" />
     <Compile Include="Properties\Annotations.cs" />
     <Compile Include="Properties\Annotations.Jetbrains.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
