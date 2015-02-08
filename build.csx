@@ -22,6 +22,8 @@ var solutionDir = solution.GetDirectory();
 var packagingRoot = baseDir.Combine("Packaging");
 var testResultsDir = baseDir.Combine("TestResults");
 var nugetPackagingDir = packagingRoot.Combine(projectName);
+var sourcesDir = solutionDir.Combine("src");
+var testsDir = solutionDir.Combine("tests");
 var metaDir = solutionDir.Combine("meta");
 
 // Files
@@ -120,7 +122,7 @@ Task("UnitTests")
 {
     Information("Running Tests in {0}", solution);
     XUnit2(
-        solutionDir + "/**/bin/" + configuration + "/**/*.Tests*.dll",
+        testsDir + "/**/bin/" + configuration + "/**/*.Tests*.dll",
         new XUnit2Settings {
             OutputDirectory = testResultsDir,
             HtmlReport = true,
@@ -138,7 +140,7 @@ Task("CopyNugetPackageFiles")
         CreateDirectory(nugetPackagingDir);
     }
 
-    var baseBuildDir = solutionDir.Combine(projectName).Combine("bin").Combine(configuration);
+    var baseBuildDir = sourcesDir.Combine(projectName).Combine("bin").Combine(configuration);
 
     var net45BuildDir = baseBuildDir.Combine("Net45");
     var net45PackageDir = nugetPackagingDir.Combine("lib/net45/");

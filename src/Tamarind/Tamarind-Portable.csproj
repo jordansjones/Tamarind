@@ -40,7 +40,7 @@
     <!-- A reference to the entire .NET Framework is automatically included -->
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\meta\SolutionInfo.cs">
+    <Compile Include="..\..\meta\SolutionInfo.cs">
       <Link>Properties\SolutionInfo.cs</Link>
     </Compile>
     <Compile Include="Concurrent\IRateLimiter.cs" />

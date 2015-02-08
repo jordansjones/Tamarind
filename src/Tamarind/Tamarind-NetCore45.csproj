@@ -108,7 +108,7 @@
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\meta\SolutionInfo.cs">
+    <Compile Include="..\..\meta\SolutionInfo.cs">
       <Link>Properties\SolutionInfo.cs</Link>
     </Compile>
     <Compile Include="Concurrent\IRateLimiter.cs" />
